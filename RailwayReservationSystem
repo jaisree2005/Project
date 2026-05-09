@@ -1,0 +1,112 @@
+
+
+package railway;
+
+import java.util.Scanner;
+
+public class Railway {
+
+    static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+
+        int choice;
+
+        do {
+
+            System.out.println("\n===== RAILWAY RESERVATION =====");
+            System.out.println("1.Add Train");
+            System.out.println("2.View Train");
+            System.out.println("3.Search Train");
+            System.out.println("4.Book Ticket");
+            System.out.println("5.Cancel Ticket");
+            System.out.println("6.Exit");
+
+            choice = sc.nextInt();
+
+            switch (choice) {
+
+                case 1:
+
+                    System.out.println("Train No:");
+                    int no = sc.nextInt();
+                    sc.nextLine();
+
+                    System.out.println("Train Name:");
+                    String name = sc.nextLine();
+
+                    System.out.println("Source:");
+                    String src = sc.nextLine();
+
+                    System.out.println("Destination:");
+                    String dest = sc.nextLine();
+
+                    System.out.println("Seats:");
+                    int seats = sc.nextInt();
+
+                    DB_Connector.insertTrain(no, name, src, dest, seats);
+
+                    break;
+
+
+                case 2:
+                    DB_Connector.viewTrain();
+                    break;
+
+
+                case 3:
+                    System.out.println("Enter Train No:");
+                    DB_Connector.searchTrain(sc.nextInt());
+                    break;
+
+
+                case 4:
+
+                    sc.nextLine();
+
+                    System.out.println("Name:");
+                    String pname = sc.nextLine();
+
+                    System.out.println("Phone:");
+                    String phone = sc.nextLine();
+
+                    System.out.println("Email:");
+                    String email = sc.nextLine();
+
+                    System.out.println("Gender:");
+                    String gender = sc.nextLine();
+
+                    System.out.println("Age:");
+                    int age = sc.nextInt();
+                    sc.nextLine();
+
+                    System.out.println("Aadhaar Number:");
+                    String aadhar = sc.nextLine();
+
+                    if (!aadhar.matches("\\d{12}")) {
+                        System.out.println("Invalid Aadhaar!");
+                        break;
+                    }
+
+                    System.out.println("Train Number:");
+                    int tno = sc.nextInt();
+
+                    DB_Connector.bookTicket(
+                            pname, phone, email,
+                            gender, age, aadhar, tno);
+                    break;
+
+
+                case 5:
+
+                    System.out.println("Enter Ticket Number:");
+                    int ticketNo = sc.nextInt();
+
+                    DB_Connector.cancelTicket(ticketNo);
+                    break;
+
+            }
+
+        } while (choice != 6);
+    }
+}
