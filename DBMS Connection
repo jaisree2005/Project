@@ -1,0 +1,234 @@
+package railway;
+
+import java.sql.*;
+
+public class DB_Connector {
+
+    static final String URL =
+            "jdbc:mysql://localhost:3306/railway";
+
+    static final String USER = "root";
+
+    static final String PASSWORD = "Gowtham@8";
+
+
+    // ================= ADD TRAIN =================
+    public static void insertTrain(int trainNo,
+                                   String trainName,
+                                   String source,
+                                   String destination,
+                                   int seats) {
+
+        try (Connection conn =
+                     DriverManager.getConnection(URL, USER, PASSWORD)) {
+
+            
+            		String query = "INSERT INTO train (train_no, train_name, source, destination, seats) VALUES (?,?,?,?,?)";
+
+
+            PreparedStatement ps =
+                    conn.prepareStatement(query);
+
+            ps.setInt(1, trainNo);
+            ps.setString(2, trainName);
+            ps.setString(3, source);
+            ps.setString(4, destination);
+            ps.setInt(5, seats);
+
+            ps.executeUpdate();
+
+            System.out.println("Train Added Successfully");
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+
+    // ================= VIEW TRAIN =================
+    public static void viewTrain() {
+
+        try (Connection conn =
+                     DriverManager.getConnection(URL, USER, PASSWORD)) {
+
+            Statement stmt = conn.createStatement();
+
+            ResultSet rs =
+                    stmt.executeQuery("SELECT * FROM train");
+
+            while (rs.next()) {
+
+                System.out.println("\nTrain No : "
+                        + rs.getInt("train_no"));
+
+                System.out.println("Name : "
+                        + rs.getString("train_name"));
+
+                System.out.println("Source : "
+                        + rs.getString("source"));
+
+                System.out.println("Destination : "
+                        + rs.getString("destination"));
+
+                System.out.println("Seats : "
+                        + rs.getInt("seats"));
+
+                System.out.println("---------------------");
+            }
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+
+    // ================= SEARCH TRAIN =================
+    public static boolean searchTrain(int trainNo) {
+
+        try (Connection conn =
+                     DriverManager.getConnection(URL, USER, PASSWORD)) {
+
+            String query =
+                    "SELECT * FROM train WHERE train_no=?";
+
+            PreparedStatement ps =
+                    conn.prepareStatement(query);
+
+            ps.setInt(1, trainNo);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                System.out.println("Train Found");
+                return true;
+            }
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        System.out.println("Train Not Found");
+        return false;
+    }
+
+
+    // ================= BOOK TICKET =================
+    public static void bookTicket(String name,
+                                  String phone,
+                                  String email,
+                                  String gender,
+                                  int age,
+                                  String aadhar,
+                                  int trainNo) {
+
+        try (Connection conn =
+                     DriverManager.getConnection(URL, USER, PASSWORD)) {
+
+            conn.setAutoCommit(false);
+
+            // Reduce Seat
+            String seatQuery =
+                    "UPDATE train SET seats=seats-1 "
+                            + "WHERE train_no=? AND seats>0";
+
+            PreparedStatement ps1 =
+                    conn.prepareStatement(seatQuery);
+
+            ps1.setInt(1, trainNo);
+
+            int rows = ps1.executeUpdate();
+
+            if (rows == 0) {
+                System.out.println("No Seats Available");
+                conn.rollback();
+                return;
+            }
+
+            // Insert Ticket
+            String ticketQuery =
+                    "INSERT INTO ticket "
+                            + "(passenger_name,phone,email,gender,age,aadhar_no,train_no)"
+                            + " VALUES (?,?,?,?,?,?,?)";
+
+            PreparedStatement ps2 =
+                    conn.prepareStatement(ticketQuery,
+                            Statement.RETURN_GENERATED_KEYS);
+
+            ps2.setString(1, name);
+            ps2.setString(2, phone);
+            ps2.setString(3, email);
+            ps2.setString(4, gender);
+            ps2.setInt(5, age);
+            ps2.setString(6, aadhar);
+            ps2.setInt(7, trainNo);
+
+            ps2.executeUpdate();
+
+            ResultSet rs = ps2.getGeneratedKeys();
+
+            if (rs.next()) {
+
+                System.out.println("Ticket Booked Successfully");
+                System.out.println("Ticket Number : "
+                        + rs.getInt(1));
+            }
+
+            conn.commit();
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+
+    // ================= CANCEL TICKET =================
+    public static void cancelTicket(int ticketNo) {
+
+        try (Connection conn =
+                     DriverManager.getConnection(URL, USER, PASSWORD)) {
+
+            conn.setAutoCommit(false);
+
+            // Find Train
+            String find =
+                    "SELECT train_no FROM ticket WHERE ticket_no=?";
+
+            PreparedStatement ps1 =
+                    conn.prepareStatement(find);
+
+            ps1.setInt(1, ticketNo);
+
+            ResultSet rs = ps1.executeQuery();
+
+            if (!rs.next()) {
+                System.out.println("Invalid Ticket Number ");
+                return;
+            }
+
+            int trainNo = rs.getInt("train_no");
+
+            // Delete Ticket
+            PreparedStatement ps2 =
+                    conn.prepareStatement(
+                            "DELETE FROM ticket WHERE ticket_no=?");
+
+            ps2.setInt(1, ticketNo);
+            ps2.executeUpdate();
+
+            // Increase Seat
+            PreparedStatement ps3 =
+                    conn.prepareStatement(
+                            "UPDATE train SET seats=seats+1 WHERE train_no=?");
+
+            ps3.setInt(1, trainNo);
+            ps3.executeUpdate();
+
+            conn.commit();
+
+            System.out.println("Ticket Cancelled Successfully");
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+}
